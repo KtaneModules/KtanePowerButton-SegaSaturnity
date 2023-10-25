@@ -179,11 +179,11 @@ public class PowerButtonScript : MonoBehaviour {
 	}
 
 	IEnumerator TwitchHandleForcedSolve()
-    {
+	{
 		if (!isOn)
-        {
+		{
 			if (bomb.GetTime() > startBombTime / 2)
-            {
+			{
 				while (mod(bomb.GetSolvedModuleNames().Count, 5) != 0 && bomb.GetSolvedModuleNames().Count < count) yield return true;
 				button.OnInteract();
 			}
@@ -194,9 +194,9 @@ public class PowerButtonScript : MonoBehaviour {
 			}
 		}
 		else
-        {
+		{
 			if (bomb.GetBatteryCount() > 2 && bomb.GetOnIndicators().Count() > 0)
-            {
+			{
 				while (mod((int)bomb.GetTime(), 10) != (mod(bomb.GetSerialNumberNumbers().Sum(), 9) == 0 ? 9 : mod(bomb.GetSerialNumberNumbers().Sum(), 9))) yield return true;
 				button.OnInteract();
 			}
@@ -205,18 +205,18 @@ public class PowerButtonScript : MonoBehaviour {
 				int target = bomb.GetSolvableModuleNames().Count - bomb.GetSolvedModuleNames().Count;
 				while (target > 59) target -= 20;
 				while (mod((int)bomb.GetTime(), 60) != target)
-                {
+				{
 					yield return true;
 					target = bomb.GetSolvableModuleNames().Count - bomb.GetSolvedModuleNames().Count;
 					while (target > 59) target -= 20;
 				}
 				button.OnInteract();
 			}
-            else
-            {
+			else
+			{
 				while (!(mod((int)bomb.GetTime(), 60) / 10 + mod((int)bomb.GetTime(), 10)).EqualsAny(2, 3, 5, 7, 11, 13)) yield return true;
 				button.OnInteract();
 			}
 		}
-    }
+	}
 }
