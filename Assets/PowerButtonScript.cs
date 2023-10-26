@@ -138,4 +138,85 @@ public class PowerButtonScript : MonoBehaviour {
 		isSolved = true;
 		ringLight.GetComponent<Renderer>().enabled = !ringLight.GetComponent<Renderer>().enabled;
 	}
+
+	//twitch plays
+	#pragma warning disable 414
+	private readonly string TwitchHelpMessage = @"!{0} press (##/#) [Presses the power button (optionally when the last two digits of the bomb's timer are '##' or the last digit is '#')]";
+	#pragma warning restore 414
+	IEnumerator ProcessTwitchCommand(string command)
+	{
+		string[] parameters = command.Split(' ');
+		if (parameters[0].EqualsIgnoreCase("press"))
+		{
+			if (parameters.Length > 2)
+				yield return "sendtochaterror Too many parameters!";
+			else if (parameters.Length == 2)
+			{
+				int temp = -1;
+				if (!int.TryParse(parameters[1], out temp))
+				{
+					yield return "sendtochaterror!f The specified number '" + parameters[1] + "' is invalid!";
+					yield break;
+				}
+				if (temp < 0 || temp > 59)
+				{
+					yield return "sendtochaterror The specified number '" + parameters[1] + "' is invalid!";
+					yield break;
+				}
+				yield return null;
+				if (parameters[1].Length == 2)
+					while (temp != mod((int)bomb.GetTime(), 60)) yield return "trycancel Halted waiting to press the button due to a cancel request!";
+				else
+					while (temp != mod((int)bomb.GetTime(), 10)) yield return "trycancel Halted waiting to press the button due to a cancel request!";
+				button.OnInteract();
+			}
+			else if (parameters.Length == 1)
+			{
+				yield return null;
+				button.OnInteract();
+			}
+		}
+	}
+
+	IEnumerator TwitchHandleForcedSolve()
+	{
+		if (!isOn)
+		{
+			if (bomb.GetTime() > startBombTime / 2)
+			{
+				while (mod(bomb.GetSolvedModuleNames().Count, 5) != 0 && bomb.GetSolvedModuleNames().Count < count) yield return true;
+				button.OnInteract();
+			}
+			else
+			{
+				while (mod(bomb.GetSolvableModuleNames().Count - bomb.GetSolvedModuleNames().Count, 5) != 0 && bomb.GetSolvedModuleNames().Count < count) yield return true;
+				button.OnInteract();
+			}
+		}
+		else
+		{
+			if (bomb.GetBatteryCount() > 2 && bomb.GetOnIndicators().Count() > 0)
+			{
+				while (mod((int)bomb.GetTime(), 10) != (mod(bomb.GetSerialNumberNumbers().Sum(), 9) == 0 ? 9 : mod(bomb.GetSerialNumberNumbers().Sum(), 9))) yield return true;
+				button.OnInteract();
+			}
+			else if ((bomb.IsIndicatorOn("CAR") || bomb.IsIndicatorOff("CAR")) && bomb.GetPortCount(Port.RJ45) >= 1)
+			{
+				int target = bomb.GetSolvableModuleNames().Count - bomb.GetSolvedModuleNames().Count;
+				while (target > 59) target -= 20;
+				while (mod((int)bomb.GetTime(), 60) != target)
+				{
+					yield return true;
+					target = bomb.GetSolvableModuleNames().Count - bomb.GetSolvedModuleNames().Count;
+					while (target > 59) target -= 20;
+				}
+				button.OnInteract();
+			}
+			else
+			{
+				while (!(mod((int)bomb.GetTime(), 60) / 10 + mod((int)bomb.GetTime(), 10)).EqualsAny(2, 3, 5, 7, 11, 13)) yield return true;
+				button.OnInteract();
+			}
+		}
+	}
 }
